@@ -29,6 +29,8 @@ import org.opensearch.common.xcontent.XContentParser.Token
 import org.opensearch.common.xcontent.XContentParserUtils.ensureExpectedToken
 import org.opensearch.env.Environment
 import org.opensearch.env.NodeEnvironment
+import org.opensearch.index.IndexModule
+import org.opensearch.indexmanagement.index.TaskListener
 import org.opensearch.indexmanagement.indexstatemanagement.DefaultIndexMetadataService
 import org.opensearch.indexmanagement.indexstatemanagement.ExtensionStatusChecker
 import org.opensearch.indexmanagement.indexstatemanagement.ISMActionsParser
@@ -198,6 +200,7 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
     private var customIndexUUIDSetting: String? = null
     private val extensions = mutableSetOf<String>()
     private val extensionCheckerMap = mutableMapOf<String, StatusChecker>()
+    lateinit var taskListener: TaskListener
 
     companion object {
         const val PLUGINS_BASE_URI = "/_plugins"
@@ -435,6 +438,8 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
 
         val pluginVersionSweepCoordinator = PluginVersionSweepCoordinator(skipFlag, settings, threadPool, clusterService)
 
+        taskListener = TaskListener(clusterService)
+
         return listOf(
             managedIndexRunner,
             rollupRunner,
@@ -447,6 +452,10 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
             smRunner,
             pluginVersionSweepCoordinator
         )
+    }
+
+    override fun onIndexModule(indexModule: IndexModule) {
+        indexModule.addIndexOperationListener(this.taskListener)
     }
 
     @Suppress("LongMethod")
