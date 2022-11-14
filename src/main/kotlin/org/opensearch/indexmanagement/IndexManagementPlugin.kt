@@ -438,7 +438,7 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
 
         val pluginVersionSweepCoordinator = PluginVersionSweepCoordinator(skipFlag, settings, threadPool, clusterService)
 
-        taskListener = TaskListener(clusterService)
+        taskListener = TaskListener(clusterService, client, xContentRegistry)
 
         return listOf(
             managedIndexRunner,
