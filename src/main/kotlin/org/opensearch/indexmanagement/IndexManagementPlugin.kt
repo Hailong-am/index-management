@@ -455,7 +455,9 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
     }
 
     override fun onIndexModule(indexModule: IndexModule) {
-        indexModule.addIndexOperationListener(this.taskListener)
+        if (indexModule.index.equals(".tasks")) {
+            indexModule.addIndexOperationListener(this.taskListener)
+        }
     }
 
     @Suppress("LongMethod")
