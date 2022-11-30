@@ -31,6 +31,8 @@ import org.opensearch.env.Environment
 import org.opensearch.env.NodeEnvironment
 import org.opensearch.index.IndexModule
 import org.opensearch.indexmanagement.index.TaskListener
+import org.opensearch.indexmanagement.index.TaskNotificationRunner
+import org.opensearch.indexmanagement.index.model.TaskNotification
 import org.opensearch.indexmanagement.indexstatemanagement.DefaultIndexMetadataService
 import org.opensearch.indexmanagement.indexstatemanagement.ExtensionStatusChecker
 import org.opensearch.indexmanagement.indexstatemanagement.ISMActionsParser
@@ -178,6 +180,7 @@ import org.opensearch.repositories.RepositoriesService
 import org.opensearch.rest.RestController
 import org.opensearch.rest.RestHandler
 import org.opensearch.script.ScriptService
+import org.opensearch.tasks.TaskResultsService
 import org.opensearch.threadpool.ThreadPool
 import org.opensearch.transport.RemoteClusterService
 import org.opensearch.transport.TransportInterceptor
@@ -270,6 +273,15 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
                     SMMetadata.SM_METADATA_TYPE -> {
                         return@ScheduledJobParser null
                     }
+
+                    TaskNotification.TASK_NOTIFICATION_TYPE -> {
+                        return@ScheduledJobParser TaskNotification.parse(
+                            xcp,
+                            jobDocVersion.seqNo,
+                            jobDocVersion.primaryTerm
+                        )
+                    }
+
                     else -> {
                         logger.warn("Unsupported document was indexed in $INDEX_MANAGEMENT_INDEX with type: $fieldName")
                         xcp.skipChildren()
@@ -440,6 +452,9 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
 
         taskListener = TaskListener(clusterService, client, xContentRegistry)
 
+        val taskNotificationRunner =
+            TaskNotificationRunner.init(client, threadPool, settings, indexManagementIndices, clusterService)
+
         return listOf(
             managedIndexRunner,
             rollupRunner,
@@ -450,13 +465,14 @@ class IndexManagementPlugin : JobSchedulerExtension, NetworkPlugin, ActionPlugin
             indexStateManagementHistory,
             indexMetadataProvider,
             smRunner,
-            pluginVersionSweepCoordinator
+            pluginVersionSweepCoordinator,
+            taskNotificationRunner
         )
     }
 
     override fun onIndexModule(indexModule: IndexModule) {
-        if (indexModule.index.equals(".tasks")) {
-            indexModule.addIndexOperationListener(this.taskListener)
+        if (indexModule.index.equals(TaskResultsService.TASK_INDEX)) {
+            // indexModule.addIndexOperationListener(this.taskListener)
         }
     }
 

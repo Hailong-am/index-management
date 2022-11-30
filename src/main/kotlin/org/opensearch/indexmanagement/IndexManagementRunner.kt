@@ -6,6 +6,8 @@
 package org.opensearch.indexmanagement
 
 import org.apache.logging.log4j.LogManager
+import org.opensearch.indexmanagement.index.TaskNotificationRunner
+import org.opensearch.indexmanagement.index.model.TaskNotification
 import org.opensearch.indexmanagement.indexstatemanagement.ManagedIndexRunner
 import org.opensearch.indexmanagement.indexstatemanagement.model.ManagedIndexConfig
 import org.opensearch.indexmanagement.rollup.RollupRunner
@@ -28,6 +30,7 @@ object IndexManagementRunner : ScheduledJobRunner {
             is Rollup -> RollupRunner.runJob(job, context)
             is Transform -> TransformRunner.runJob(job, context)
             is SMPolicy -> SMRunner.runJob(job, context)
+            is TaskNotification -> TaskNotificationRunner.runJob(job, context)
             else -> {
                 val errorMessage = "Invalid job type, found ${job.javaClass.simpleName} with id: ${context.jobId}"
                 logger.error(errorMessage)

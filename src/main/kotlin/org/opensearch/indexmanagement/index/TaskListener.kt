@@ -10,12 +10,8 @@ import org.apache.logging.log4j.Logger
 import org.opensearch.action.ActionListener
 import org.opensearch.client.Client
 import org.opensearch.client.node.NodeClient
-import org.opensearch.cluster.routing.IndexShardRoutingTable
 import org.opensearch.cluster.service.ClusterService
-import org.opensearch.common.xcontent.LoggingDeprecationHandler
 import org.opensearch.common.xcontent.NamedXContentRegistry
-import org.opensearch.common.xcontent.XContentHelper
-import org.opensearch.common.xcontent.XContentType
 import org.opensearch.commons.ConfigConstants
 import org.opensearch.commons.notifications.NotificationsPluginInterface
 import org.opensearch.commons.notifications.action.GetChannelListRequest
@@ -40,7 +36,9 @@ class TaskListener(
     override fun postIndex(shardId: ShardId, index: Engine.Index, result: Engine.IndexResult) {
         if (result.resultType == Engine.Result.Type.FAILURE) {
             log.info(
-                "Indexing failed for job {} on index {}", index.id(), shardId.indexName
+                "Indexing failed for job {} on index {}",
+                index.id(),
+                shardId.indexName
             )
             return
         }
@@ -59,15 +57,11 @@ class TaskListener(
 
         val payload = index.source().utf8ToString()
 
-        val parser = XContentHelper.createParser(
-            this.xContentRegistry, LoggingDeprecationHandler.INSTANCE,
-            index.source(), XContentType.JSON
-        )
-
         client.threadPool().threadContext.stashContext().use {
             // We need to set the user context information in the thread context for notification plugin to correctly resolve the user object
             client.threadPool().threadContext.putTransient(
-                ConfigConstants.OPENSEARCH_SECURITY_USER_INFO_THREAD_CONTEXT, SecurityUtils.generateUserString(null)
+                ConfigConstants.OPENSEARCH_SECURITY_USER_INFO_THREAD_CONTEXT,
+                SecurityUtils.generateUserString(null)
             )
             client.threadPool().threadContext.stashContext().use {
                 NotificationsPluginInterface.getChannelList(
@@ -102,15 +96,6 @@ class TaskListener(
                         }
                     }
                 )
-            }
-        }
-
-        val localNodeId: String = clusterService.localNode().id
-        val routingTable: IndexShardRoutingTable = clusterService.state().routingTable().shardRoutingTable(shardId)
-        val shardNodeIds: MutableList<String> = ArrayList()
-        for (shardRouting in routingTable) {
-            if (shardRouting.active()) {
-                shardNodeIds.add(shardRouting.currentNodeId())
             }
         }
     }
