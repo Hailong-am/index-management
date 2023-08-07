@@ -195,11 +195,7 @@ abstract class IndexManagementRestTestCase : ODFERestTestCase() {
             }
 
             val response = client.performRequest(Request("GET", "/_cat/indices?format=json&expand_wildcards=all"))
-<<<<<<< HEAD
-            val xContentType = XContentType.fromMediaType(response.entity.contentType.value)
-=======
             val xContentType = MediaType.fromMediaType(response.entity.contentType)
->>>>>>> d4cafd60 (Fix core XcontentType refactor (#873))
             xContentType.xContent().createParser(
                 NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
                 response.entity.content
@@ -268,11 +264,7 @@ abstract class IndexManagementRestTestCase : ODFERestTestCase() {
         protected fun waitForThreadPools(client: RestClient) {
             val response = client.performRequest(Request("GET", "/_cat/thread_pool?format=json"))
 
-<<<<<<< HEAD
-            val xContentType = XContentType.fromMediaType(response.entity.contentType.value)
-=======
             val xContentType = MediaType.fromMediaType(response.entity.contentType)
->>>>>>> d4cafd60 (Fix core XcontentType refactor (#873))
             xContentType.xContent().createParser(
                 NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
                 response.entity.content
